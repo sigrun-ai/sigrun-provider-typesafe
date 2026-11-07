@@ -1,6 +1,6 @@
 {
 	"name": "@sigrun/provider-typesafe",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Sigrun provider plugin: TypeSafe (Jev) as a decision provider",
 	"type": "module",
 	"engines": {
