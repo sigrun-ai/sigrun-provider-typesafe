@@ -1,11 +1,11 @@
 /**
  * Scoped settings for @sigrun/provider-typesafe (warden Task 8):
- * `settings/typesafe.json`, read through the plugin host's scoped
+ * `settings/provider-typesafe.json`, read through the plugin host's scoped
  * settings store. The shape:
  *
  * ```json
  * {
- *   "backend": "typesafe",                     // a pi-typesafe BackendSpec
+ *   "backend": "typesafe",                     // a pi-typesafe registry name
  *   "models": [{ "id": "jev-latest" }],        // the published model list
  *   "caps": { "requestsPerDay": 100, "inputTokensPerDay": 100000, "usdPerDay": 5 }
  * }
@@ -16,7 +16,7 @@
  * must not quarantine the extension loudly at the parser level — the
  * contribution still stands with defaults).
  */
-import { resolveBackend } from "pi-typesafe";
+import { resolveBackend, TypeSafeIntegrationError, } from "pi-typesafe";
 /** pi-typesafe's default judgment backend (registry name). */
 export const DEFAULT_BACKEND = "typesafe";
 /** pi-typesafe's default model id on the default backend. */
@@ -91,7 +91,11 @@ export function parseSettings(raw, warn) {
             try {
                 resolveBackend(backend);
             }
-            catch {
+            catch (error) {
+                if (!(error instanceof TypeSafeIntegrationError) ||
+                    error.code !== "configuration") {
+                    throw error;
+                }
                 warn(`provider-typesafe: unknown backend "${backend}"; using the default`);
                 backend = DEFAULT_BACKEND;
             }

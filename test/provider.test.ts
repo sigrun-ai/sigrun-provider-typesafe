@@ -14,6 +14,7 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { backendHost, DEFAULT_BACKEND } from "pi-typesafe";
 import createTypesafeProvider from "../src/index.js";
 import type { TypesafePluginHost } from "../src/provider.js";
 import type { TypesafeProviderResult } from "../src/index.js";
@@ -144,7 +145,7 @@ describe("provider-typesafe", () => {
 			signal: AbortSignal.timeout(5_000),
 		});
 		expect(calls.length).toBe(1);
-		expect(new URL(calls[0]!.url).origin).toBe("https://api.typesafe.ai");
+		expect(new URL(calls[0]!.url).host).toBe(backendHost(DEFAULT_BACKEND));
 	});
 
 	it("evaluate returns answers, usage and model from a fake fetch", async () => {
