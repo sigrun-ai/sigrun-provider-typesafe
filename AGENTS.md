@@ -19,10 +19,13 @@ plus one extra field:
 
 ## Layout
 
+- `settings/provider-typesafe.json` — the scoped settings slug, derived
+  by core from the extension name `@sigrun/provider-typesafe`.
 - `src/index.ts` — the factory (default export, arity 1, async: the
   scoped settings store is async-only).
 - `src/settings.ts` — `parseSettings` for the scoped
-  `settings/typesafe.json` (backend, models, caps; warn-per-invalid-key).
+  `settings/provider-typesafe.json` (backend, models, caps;
+  warn-per-invalid-key).
   An unknown backend name is CHECKED with pi-typesafe's
   `resolveBackend` at parse time (warn + fall back to the default),
   but the raw string still goes to `createTypeSafe` — a

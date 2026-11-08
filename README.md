@@ -35,7 +35,7 @@ Without a credential, evaluate throws `not configured`.
 
 Default model list: `[{ id: "jev-latest" }]` with the pi-typesafe
 default backend's limits. Override in scoped settings
-(`settings/typesafe.json` in the plugin's config section):
+(`settings/provider-typesafe.json` in the plugin's config section):
 
 ```json
 {
@@ -54,7 +54,7 @@ first evaluate.
 `degraded` until a success.
 
 **Every setting needs a restart to take effect.** The factory reads
-`settings/typesafe.json` once when the extension loads, and each key
+`settings/provider-typesafe.json` once when the extension loads, and each key
 is consumed from that snapshot:
 
 - `backend` and `models` are baked into the decision-provider
