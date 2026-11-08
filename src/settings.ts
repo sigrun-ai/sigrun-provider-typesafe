@@ -14,7 +14,9 @@
  * Unknown/invalid keys warn and fall back to the default for that key;
  * the file never hard-fails a boot (a malformed provider settings file
  * must not quarantine the extension loudly at the parser level — the
- * contribution still stands with defaults).
+ * contribution still stands with defaults) — except an unexpected
+ * resolver failure, which propagates so it is not mislabelled
+ * `unknown backend`.
  */
 
 import {
