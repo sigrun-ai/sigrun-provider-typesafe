@@ -1,11 +1,11 @@
 /**
  * Scoped settings for @sigrun/provider-typesafe (warden Task 8):
- * `settings/typesafe.json`, read through the plugin host's scoped
+ * `settings/provider-typesafe.json`, read through the plugin host's scoped
  * settings store. The shape:
  *
  * ```json
  * {
- *   "backend": "typesafe",                     // a pi-typesafe BackendSpec
+ *   "backend": "typesafe",                     // a pi-typesafe registry name
  *   "models": [{ "id": "jev-latest" }],        // the published model list
  *   "caps": { "requestsPerDay": 100, "inputTokensPerDay": 100000, "usdPerDay": 5 }
  * }
@@ -14,7 +14,9 @@
  * Unknown/invalid keys warn and fall back to the default for that key;
  * the file never hard-fails a boot (a malformed provider settings file
  * must not quarantine the extension loudly at the parser level — the
- * contribution still stands with defaults).
+ * contribution still stands with defaults) — except an unexpected
+ * resolver failure, which propagates so it is not mislabelled
+ * `unknown backend`.
  */
 import type { DecisionModelInfo } from "@sigrun/sigrun/extension";
 /** pi-typesafe's default judgment backend (registry name). */

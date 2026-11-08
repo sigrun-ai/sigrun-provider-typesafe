@@ -35,7 +35,7 @@ Without a credential, evaluate throws `not configured`.
 
 Default model list: `[{ id: "jev-latest" }]` with the pi-typesafe
 default backend's limits. Override in scoped settings
-(`settings/typesafe.json` in the plugin's config section):
+(`settings/provider-typesafe.json` in the plugin's config section):
 
 ```json
 {
@@ -45,10 +45,26 @@ default backend's limits. Override in scoped settings
 }
 ```
 
-`backend` is any pi-typesafe `BackendSpec` (a registry name).
+`backend` is a pi-typesafe registry name. An unknown name warns at
+boot (`provider-typesafe: unknown backend "<name>"; using the default`)
+and the provider falls back to `typesafe` instead of failing at the
+first evaluate.
 `caps` map to the pi-typesafe day caps; a reached cap throws
 `budget: …` from evaluate and the readiness tracker reports
 `degraded` until a success.
+
+**Every setting needs a restart to take effect.** The factory reads
+`settings/provider-typesafe.json` once when the extension loads, and each key
+is consumed from that snapshot:
+
+- `backend` and `models` are baked into the decision-provider
+  contribution at construction (the client passes the parsed backend
+  to `createTypeSafe` verbatim);
+- `caps` are read from the same snapshot when a client is built, and
+  one client is cached per credential — a running client never sees
+  new caps.
+
+Edit the file and restart sigrun; there is no live reload.
 
 ## Readiness and health
 

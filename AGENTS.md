@@ -7,14 +7,30 @@ Guidance for coding agents working in this repository.
 `@sigrun/provider-typesafe` — a sigrun extension package contributing
 TypeSafe (Jev) as a **decision provider** (typed questions over a JSON
 state via `pi-typesafe`), NOT a chat provider. The factory result is
-contributor-only: `{ name, decisionProviders, commands, health }`.
+contributor-only: `{ name, decisionProviders, commands, health }`,
+plus one extra field:
+
+- `plugin` — the built `TypesafePlugin` internals (readiness tracker,
+  health probe, and the `client()` accessor for the lazily-created
+  pi-typesafe client). The status command is bound to it, and tests
+  use it to drive `evaluate` and observe the client after the first
+  call (the client does not exist at construction). It is not part of
+  sigrun's contribution contract; the loader ignores it.
 
 ## Layout
 
+- `settings/provider-typesafe.json` — the scoped settings slug, derived
+  by core from the extension name `@sigrun/provider-typesafe`.
 - `src/index.ts` — the factory (default export, arity 1, async: the
   scoped settings store is async-only).
 - `src/settings.ts` — `parseSettings` for the scoped
-  `settings/typesafe.json` (backend, models, caps; warn-per-invalid-key).
+  `settings/provider-typesafe.json` (backend, models, caps;
+  warn-per-invalid-key).
+  An unknown backend name is CHECKED with pi-typesafe's
+  `resolveBackend` at parse time (warn + fall back to the default),
+  but the raw string still goes to `createTypeSafe` — a
+  `ResolvedBackend` cannot round-trip into it, so do not "simplify"
+  the parse into passing the resolved object.
 - `src/provider.ts` — the contribution: readiness tracker (ready /
   degraded rules), the one-client-per-credential pi-typesafe cache, and
   `evaluate` (error mapping: `not configured` without a credential,
@@ -46,7 +62,8 @@ and `git status -- dist` must be clean after.
   `~/.pi/agent`. The credential arrives via `ctx.credential`; every
   `createTypeSafe` input is explicit.
 - **Factory does no I/O:** the pi-typesafe client is built lazily on
-  the first evaluate; the factory only reads scoped settings.
+  the first evaluate; the factory only reads scoped settings (once —
+  every settings change needs a restart).
 - **Tests own their literals:** synthetic keys (`"test-key"`),
   synthetic model ids, no real hosts or tokens.
 - **Release manifest hygiene** is enforced by

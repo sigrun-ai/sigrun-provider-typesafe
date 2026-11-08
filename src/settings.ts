@@ -1,11 +1,11 @@
 /**
  * Scoped settings for @sigrun/provider-typesafe (warden Task 8):
- * `settings/typesafe.json`, read through the plugin host's scoped
+ * `settings/provider-typesafe.json`, read through the plugin host's scoped
  * settings store. The shape:
  *
  * ```json
  * {
- *   "backend": "typesafe",                     // a pi-typesafe BackendSpec
+ *   "backend": "typesafe",                     // a pi-typesafe registry name
  *   "models": [{ "id": "jev-latest" }],        // the published model list
  *   "caps": { "requestsPerDay": 100, "inputTokensPerDay": 100000, "usdPerDay": 5 }
  * }
@@ -14,12 +14,18 @@
  * Unknown/invalid keys warn and fall back to the default for that key;
  * the file never hard-fails a boot (a malformed provider settings file
  * must not quarantine the extension loudly at the parser level — the
- * contribution still stands with defaults).
+ * contribution still stands with defaults) — except an unexpected
+ * resolver failure, which propagates so it is not mislabelled
+ * `unknown backend`.
  */
 
-import type { BackendSpec } from "pi-typesafe";
+import {
+	resolveBackend,
+	type BackendLimits,
+	type BackendSpec,
+	TypeSafeIntegrationError,
+} from "pi-typesafe";
 import type { DecisionModelInfo } from "@sigrun/sigrun/extension";
-import type { BackendLimits } from "pi-typesafe";
 
 /** pi-typesafe's default judgment backend (registry name). */
 export const DEFAULT_BACKEND = "typesafe";
@@ -107,6 +113,24 @@ export function parseSettings(
 			raw.backend.trim().length > 0
 		) {
 			backend = raw.backend.trim();
+			// CHECK only: warn at boot instead of failing lazily at the
+			// first evaluate. The raw name still goes to createTypeSafe —
+			// a ResolvedBackend cannot round-trip into it (its object
+			// form refuses the default key env and it resolves eagerly).
+			try {
+				resolveBackend(backend as BackendSpec);
+			} catch (error) {
+				if (
+					!(error instanceof TypeSafeIntegrationError) ||
+					error.code !== "configuration"
+				) {
+					throw error;
+				}
+				warn(
+					`provider-typesafe: unknown backend "${backend}"; using the default`,
+				);
+				backend = DEFAULT_BACKEND;
+			}
 		} else {
 			warn(
 				"provider-typesafe: settings.backend must be a non-empty string; using the default",
