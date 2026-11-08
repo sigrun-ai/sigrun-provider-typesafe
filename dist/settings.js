@@ -16,6 +16,7 @@
  * must not quarantine the extension loudly at the parser level — the
  * contribution still stands with defaults).
  */
+import { resolveBackend } from "pi-typesafe";
 /** pi-typesafe's default judgment backend (registry name). */
 export const DEFAULT_BACKEND = "typesafe";
 /** pi-typesafe's default model id on the default backend. */
@@ -83,6 +84,17 @@ export function parseSettings(raw, warn) {
         if (typeof raw.backend === "string" &&
             raw.backend.trim().length > 0) {
             backend = raw.backend.trim();
+            // CHECK only: warn at boot instead of failing lazily at the
+            // first evaluate. The raw name still goes to createTypeSafe —
+            // a ResolvedBackend cannot round-trip into it (its object
+            // form refuses the default key env and it resolves eagerly).
+            try {
+                resolveBackend(backend);
+            }
+            catch {
+                warn(`provider-typesafe: unknown backend "${backend}"; using the default`);
+                backend = DEFAULT_BACKEND;
+            }
         }
         else {
             warn("provider-typesafe: settings.backend must be a non-empty string; using the default");

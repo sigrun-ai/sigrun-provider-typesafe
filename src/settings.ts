@@ -17,7 +17,7 @@
  * contribution still stands with defaults).
  */
 
-import type { BackendSpec } from "pi-typesafe";
+import { resolveBackend, type BackendSpec } from "pi-typesafe";
 import type { DecisionModelInfo } from "@sigrun/sigrun/extension";
 import type { BackendLimits } from "pi-typesafe";
 
@@ -107,6 +107,18 @@ export function parseSettings(
 			raw.backend.trim().length > 0
 		) {
 			backend = raw.backend.trim();
+			// CHECK only: warn at boot instead of failing lazily at the
+			// first evaluate. The raw name still goes to createTypeSafe —
+			// a ResolvedBackend cannot round-trip into it (its object
+			// form refuses the default key env and it resolves eagerly).
+			try {
+				resolveBackend(backend as never);
+			} catch {
+				warn(
+					`provider-typesafe: unknown backend "${backend}"; using the default`,
+				);
+				backend = DEFAULT_BACKEND;
+			}
 		} else {
 			warn(
 				"provider-typesafe: settings.backend must be a non-empty string; using the default",

@@ -112,6 +112,41 @@ describe("provider-typesafe", () => {
 		}
 	});
 
+	it("an unknown backend in settings warns at boot and one evaluate uses the default backend", async () => {
+		const { fetch, calls } = fakeFetch();
+		const warnings: string[] = [];
+		const warn = console.warn;
+		console.warn = (m?: unknown) => warnings.push(String(m));
+		try {
+			result = await createTypesafeProvider(
+				{
+					stores: {
+						settings: {
+							get: async () => ({ backend: "acme-nope" }),
+							set: async () => {},
+						},
+						paths: { state: stateDir },
+					},
+				},
+				{ fetch },
+			);
+		} finally {
+			console.warn = warn;
+		}
+		expect(warnings).toEqual([
+			'provider-typesafe: unknown backend "acme-nope"; using the default',
+		]);
+		// The client is lazy: "created with the default" is only
+		// observable on the wire after one evaluate with a credential.
+		await result.plugin.contribution.evaluate(REQUEST, {
+			...CTX,
+			credential: "test-key",
+			signal: AbortSignal.timeout(5_000),
+		});
+		expect(calls.length).toBe(1);
+		expect(new URL(calls[0]!.url).origin).toBe("https://api.typesafe.ai");
+	});
+
 	it("evaluate returns answers, usage and model from a fake fetch", async () => {
 		const { fetch } = fakeFetch();
 		result = await createTypesafeProvider(fakeHost(stateDir), { fetch });

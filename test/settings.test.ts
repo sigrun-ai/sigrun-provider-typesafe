@@ -36,4 +36,26 @@ describe("parseSettings", () => {
 		expect(parsed.caps).toEqual({ usdPerDay: 2.5 });
 		expect(more.length).toBe(4);
 	});
+
+	it("an unknown backend warns at boot and falls back to the default", () => {
+		const warnings: string[] = [];
+		const settings = parseSettings(
+			{ backend: "acme-nope" },
+			(m) => warnings.push(m),
+		);
+		expect(settings.backend).toBe(DEFAULT_BACKEND);
+		expect(warnings).toEqual([
+			'provider-typesafe: unknown backend "acme-nope"; using the default',
+		]);
+	});
+
+	it("a known backend warns nothing", () => {
+		const warnings: string[] = [];
+		const settings = parseSettings(
+			{ backend: "typesafe" },
+			(m) => warnings.push(m),
+		);
+		expect(settings.backend).toBe("typesafe");
+		expect(warnings).toEqual([]);
+	});
 });

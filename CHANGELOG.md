@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- An unknown `settings.backend` name now warns at boot and falls back
+  to the default backend, instead of failing lazily with a
+  configuration error on the first evaluate.
+
 ### Changed
 
 - peer pi-durable/pi-ai/chord ~1.5.0 (requires sigrun 0.11.0).
