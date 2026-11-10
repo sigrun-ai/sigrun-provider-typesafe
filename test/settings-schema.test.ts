@@ -148,7 +148,7 @@ describe("typesafe settings schema", () => {
 		// (`minItems: 1` + the default).
 		expect(
 			checkStoredSettings(TYPESAFE_SETTINGS_SCHEMA, {
-				models: [{ id: "" }, { id: 42 }, { id: "jev-9.9" }],
+				models: [{ id: "" }, { id: 42 }, { id: "   " }, { id: "jev-9.9" }],
 			}).value.models,
 		).toEqual([{ id: "jev-9.9" }]);
 		expect(
