@@ -2,9 +2,9 @@
  * @sigrun/provider-typesafe — the TypeSafe (Jev) decision provider
  * (warden Task 8). This module owns:
  *
- * - the plugin host's structural slice (scoped settings + state paths —
- *   declared here, like sigrun's other provider plugins, because the
- *   plugin cannot import sigrun core);
+ * - the plugin host's structural slice (the scoped state path — declared
+ *   here, like sigrun's other provider plugins, because the plugin cannot
+ *   import sigrun core at runtime);
  * - the readiness tracker (synchronous, plugin-owned state; starts
  *   `ready`, `degraded` after a 401, a `budget` error, or three
  *   consecutive failures, `ready` again after a success);
@@ -22,7 +22,8 @@
  * call that follows one).
  */
 import { join } from "node:path";
-import { createTypeSafe, openUsageLedger, TypeSafeIntegrationError, DEFAULT_BACKEND_LIMITS, } from "pi-typesafe";
+import { createTypeSafe, openUsageLedger, resolveBackend, TypeSafeIntegrationError, DEFAULT_BACKEND_LIMITS, } from "pi-typesafe";
+import { DEFAULT_BACKEND } from "./settings-schema.js";
 /**
  * Consecutive generic failures that flip the tracker to `degraded`.
  * A 401 or a `budget` error flips it in one; transient failures need a
@@ -30,12 +31,43 @@ import { createTypeSafe, openUsageLedger, TypeSafeIntegrationError, DEFAULT_BACK
  */
 export const DEGRADED_AFTER_FAILURES = 3;
 /**
+ * The backend NAME the client can build. The schema checks the value's shape
+ * (a non-empty string) and repairs a wrong type; membership in pi-typesafe's
+ * registry is not expressible in JSON Schema, so the check the deleted
+ * `parseSettings` parser performed stays — run once at construction (the
+ * factory's call) so an unknown name warns at boot instead of failing lazily
+ * with a configuration error at the first evaluate.
+ *
+ * A resolver failure that is not a `configuration` error propagates: that is
+ * a registry fault, and calling it "unknown backend" would mislabel it.
+ */
+function usableBackend(backend, warn) {
+    // The deleted parser trimmed the resolved name; the schema can express
+    // "not blank" but not a trim, so the trim stays here.
+    const name = backend.trim();
+    try {
+        resolveBackend(name);
+        return name;
+    }
+    catch (error) {
+        if (!(error instanceof TypeSafeIntegrationError) ||
+            error.code !== "configuration") {
+            throw error;
+        }
+        warn(`provider-typesafe: unknown backend "${name}"; using the default`);
+        return DEFAULT_BACKEND;
+    }
+}
+/**
  * Build the TypeSafe decision-provider contribution over one settings
  * snapshot and one credential-keyed client cache.
  */
 export function createTypesafePlugin(host, settings, deps = {}) {
     const ledgerPath = join(host.stores.paths.state, "usage.json");
     const { fetch, now } = deps;
+    // Resolved once here (construction time = the factory's boot) so an unknown
+    // name warns loudly before any evaluate, exactly as the parser did.
+    const backend = usableBackend(settings.backend, (m) => console.warn(m));
     // --- Readiness tracker (synchronous, plugin-owned). ---
     let degraded = false;
     let detail;
@@ -71,7 +103,7 @@ export function createTypesafePlugin(host, settings, deps = {}) {
         const caps = settings.caps;
         const client = createTypeSafe({
             apiKey: credential,
-            backend: settings.backend,
+            backend: backend,
             maxRequests: Number.MAX_SAFE_INTEGER,
             ...(caps.requestsPerDay !== undefined
                 ? { maxRequestsPerDay: caps.requestsPerDay }
@@ -96,8 +128,11 @@ export function createTypesafePlugin(host, settings, deps = {}) {
         label: "TypeSafe (Jev)",
         credentialEnv: "TYPESAFE_API_KEY",
         // The backend's limits are known without a request; core applies
-        // the built-in caps to entries without their own.
-        models: settings.models.map((model) => model.limits !== undefined
+        // the built-in caps to entries without their own. An empty `limits`
+        // object (every key invalid or cleared in the form) counts as no
+        // limits, which is what the deleted parser produced.
+        models: settings.models.map((model) => model.limits !== undefined &&
+            Object.keys(model.limits).length > 0
             ? model
             : {
                 ...model,

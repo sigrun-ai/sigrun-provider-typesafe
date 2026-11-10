@@ -14,10 +14,12 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { backendHost, DEFAULT_BACKEND } from "pi-typesafe";
+import { backendHost } from "pi-typesafe";
 import createTypesafeProvider from "../src/index.js";
+import { DEFAULT_BACKEND } from "../src/settings-schema.js";
 import type { TypesafePluginHost } from "../src/provider.js";
 import type { TypesafeProviderResult } from "../src/index.js";
+import { createFakeHost, declaredHost, type FakeHost } from "./fake-host.js";
 
 const SUCCESS_BODY = {
 	model: "jev-latest",
@@ -53,16 +55,8 @@ function fakeFetch(
 	};
 }
 
-function fakeHost(stateDir: string): TypesafePluginHost {
-	return {
-		stores: {
-			settings: {
-				get: async () => ({}),
-				set: async () => {},
-			},
-			paths: { state: stateDir },
-		},
-	};
+function fakeHost(stateDir: string, settings: Record<string, unknown> = {}): TypesafePluginHost {
+	return declaredHost(stateDir, settings).host;
 }
 
 const REQUEST = {
@@ -118,17 +112,9 @@ describe("provider-typesafe", () => {
 		const warnings: string[] = [];
 		const warn = console.warn;
 		console.warn = (m?: unknown) => warnings.push(String(m));
-		try {
+			try {
 			result = await createTypesafeProvider(
-				{
-					stores: {
-						settings: {
-							get: async () => ({ backend: "acme-nope" }),
-							set: async () => {},
-						},
-						paths: { state: stateDir },
-					},
-				},
+				fakeHost(stateDir, { backend: "acme-nope" }),
 				{ fetch },
 			);
 		} finally {
@@ -181,15 +167,7 @@ describe("provider-typesafe", () => {
 		// nothing; the plugin prices synthetic traffic at the settings'
 		// default rate — set the cap below any real call).
 		result = await createTypesafeProvider(
-			{
-				stores: {
-					settings: {
-						get: async () => ({ caps: { usdPerDay: 0.000001 } }),
-						set: async () => {},
-					},
-					paths: { state: stateDir },
-				},
-			},
+			fakeHost(stateDir, { caps: { usdPerDay: 0.000001 } }),
 			{ fetch },
 		);
 		expect(result.plugin.readiness().status).toBe("ready");

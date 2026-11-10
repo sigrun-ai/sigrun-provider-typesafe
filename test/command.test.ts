@@ -12,23 +12,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import createTypesafeProvider from "../src/index.js";
-import type { TypesafePluginHost } from "../src/provider.js";
 import type { TypesafeProviderResult } from "../src/index.js";
+import { declaredHost } from "./fake-host.js";
 
 const SUCCESS_BODY = {
 	model: "jev-latest",
 	answers: { verdict: { type: "noul", noul: 0.87 } },
 	usage: { input_tokens: 42, output_tokens: 3 },
 };
-
-function fakeHost(stateDir: string): TypesafePluginHost {
-	return {
-		stores: {
-			settings: { get: async () => ({}), set: async () => {} },
-			paths: { state: stateDir },
-		},
-	};
-}
 
 const CTX = { model: "jev-latest", caller: "test" };
 
@@ -62,7 +53,7 @@ describe("typesafe command", () => {
 				status: 200,
 				headers: { "content-type": "application/json" },
 			});
-		const result = await createTypesafeProvider(fakeHost(stateDir), {
+		const result = await createTypesafeProvider(declaredHost(stateDir).host, {
 			fetch,
 		});
 
@@ -95,15 +86,7 @@ describe("typesafe command", () => {
 				headers: { "content-type": "application/json" },
 			});
 		const result = await createTypesafeProvider(
-			{
-				stores: {
-					settings: {
-						get: async () => ({ caps: { requestsPerDay: 1 } }),
-						set: async () => {},
-					},
-					paths: { state: stateDir },
-				},
-			},
+			declaredHost(stateDir, { caps: { requestsPerDay: 1 } }).host,
 			{ fetch },
 		);
 		await result.plugin.contribution.evaluate(

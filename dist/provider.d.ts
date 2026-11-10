@@ -2,9 +2,9 @@
  * @sigrun/provider-typesafe — the TypeSafe (Jev) decision provider
  * (warden Task 8). This module owns:
  *
- * - the plugin host's structural slice (scoped settings + state paths —
- *   declared here, like sigrun's other provider plugins, because the
- *   plugin cannot import sigrun core);
+ * - the plugin host's structural slice (the scoped state path — declared
+ *   here, like sigrun's other provider plugins, because the plugin cannot
+ *   import sigrun core at runtime);
  * - the readiness tracker (synchronous, plugin-owned state; starts
  *   `ready`, `degraded` after a 401, a `budget` error, or three
  *   consecutive failures, `ready` again after a success);
@@ -22,7 +22,7 @@
  * call that follows one).
  */
 import { type TypeSafe } from "pi-typesafe";
-import type { DecisionProviderContribution, ProviderReadiness } from "@sigrun/sigrun/extension";
+import type { DecisionProviderContribution, DeclaredSettings, ProviderReadiness, SettingsDeclaration } from "@sigrun/sigrun/extension";
 /**
  * The `@typesafe-ai/sdk` transport shape: `(input, init) => Response`.
  * pi-typesafe 0.14.0 does NOT re-export this type (a verified gap —
@@ -30,19 +30,18 @@ import type { DecisionProviderContribution, ProviderReadiness } from "@sigrun/si
  * models/values), so it is declared here to the same signature.
  */
 export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
-import type { TypesafeProviderSettings } from "./settings.js";
+import type { TypesafeProviderSettings } from "./settings-schema.js";
 /**
  * Structural slice of sigrun's seam host (src/harness/seam-host.ts) a
- * decision-provider plugin consumes: the scoped settings store (async —
- * which is why the loader awaits factory results) plus the scoped state
- * path the usage ledger lives under.
+ * decision-provider plugin consumes: the scoped state path the usage
+ * ledger lives under, plus the declared-settings handle the factory reads
+ * once through (`host.settings.declare`, the settings-rework contract).
  */
 export interface TypesafePluginHost {
+    readonly settings: {
+        declare<S = Record<string, unknown>, U = Record<string, unknown>>(declaration: SettingsDeclaration): DeclaredSettings<S, U>;
+    };
     readonly stores: {
-        readonly settings: {
-            get(): Promise<Record<string, unknown>>;
-            set(value: Record<string, unknown>): Promise<void>;
-        };
         readonly paths: {
             readonly state: string;
         };
