@@ -45,13 +45,22 @@ default backend's limits. Override in scoped settings
 }
 ```
 
+(The form on the extension's settings page draws the same three keys; editing
+the file directly works too.)
+
 `backend` is a pi-typesafe registry name. An unknown name warns at
 boot (`provider-typesafe: unknown backend "<name>"; using the default`)
 and the provider falls back to `typesafe` instead of failing at the
 first evaluate.
-`caps` map to the pi-typesafe day caps; a reached cap throws
-`budget: …` from evaluate and the readiness tracker reports
-`degraded` until a success.
+`caps` map to the pi-typesafe day caps; a cap you leave out is
+uncapped, a reached cap throws `budget: …` from evaluate, and the
+readiness tracker reports `degraded` until a success.
+
+The three keys are declared as JSON Schema, so sigrun's settings page
+draws them as a form (a `Backend` field, a `Models` entry list and a
+`Daily caps` group) and checks every save. A value already in the file
+that no longer fits is repaired to its default, with a warning and an
+admin notice.
 
 **Every setting needs a restart to take effect.** The factory reads
 `settings/provider-typesafe.json` once when the extension loads, and each key

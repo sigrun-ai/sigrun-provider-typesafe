@@ -22,15 +22,20 @@ plus one extra field:
 - `settings/provider-typesafe.json` — the scoped settings slug, derived
   by core from the extension name `@sigrun/provider-typesafe`.
 - `src/index.ts` — the factory (default export, arity 1, async: the
-  scoped settings store is async-only).
-- `src/settings.ts` — `parseSettings` for the scoped
-  `settings/provider-typesafe.json` (backend, models, caps;
-  warn-per-invalid-key).
-  An unknown backend name is CHECKED with pi-typesafe's
-  `resolveBackend` at parse time (warn + fall back to the default),
-  but the raw string still goes to `createTypeSafe` — a
-  `ResolvedBackend` cannot round-trip into it, so do not "simplify"
-  the parse into passing the resolved object.
+  declared settings read is async-only). It declares the schema first,
+  then reads it ONCE and hands the snapshot to the plugin; no other
+  settings read exists in this package.
+- `src/settings-schema.ts` — the declared settings as one JSON Schema
+  (`backend`, `models`, `caps`), passed to `host.settings.declare` in the
+  factory. Core owns the form, the defaults and the malformed-value
+  repair; every key is `x-sigrun-apply: "restart"` because the factory
+  reads the surface once and hands that snapshot to the plugin.
+  The schema checks only the SHAPE of a value, so two checks the deleted
+  `parseSettings` parser performed live on: the backend-NAME check
+  (`provider.ts` `usableBackend`, pi-typesafe's registry) and the
+  caps/model repair (core's checked read). Do not "simplify" the raw
+  backend string into a resolved `ResolvedBackend` — it cannot
+  round-trip into the `BackendSpec` `createTypeSafe` takes.
 - `src/provider.ts` — the contribution: readiness tracker (ready /
   degraded rules), the one-client-per-credential pi-typesafe cache, and
   `evaluate` (error mapping: `not configured` without a credential,
@@ -55,9 +60,13 @@ and `git status -- dist` must be clean after.
 ## Conventions
 
 - **Runtime dependency:** `pi-typesafe` only. The `@earendil-works/*`
-  packages are peers (the host ships them); `@sigrun/sigrun` is a
-  devDependency used for type-only imports of the extension contract —
-  never a peer, never a runtime import of core internals.
+  packages are peers (the host ships them). `@sigrun/sigrun` is BOTH a
+  peer (`>=0.13.0`, the release carrying `host.settings.declare`) and a
+  `file:../sigrun` devDependency — its imports here are type-only plus,
+  in the test suite, the `@sigrun/sigrun/settings-schema` authoring
+  surface (`assertDrawable`, `checkStoredSettings`), never a runtime
+  import of core internals. `typebox` is a peer AND dev pin at exactly
+  `1.3.27`: the schema builder the host links (one copy, like pi-ai's own).
 - **No ambient reads:** the provider never reads `process.env` or
   `~/.pi/agent`. The credential arrives via `ctx.credential`; every
   `createTypeSafe` input is explicit.

@@ -74,6 +74,14 @@ const HOST_MODULE_PINS = {
 	"@earendil-works/pi-codemode": "~1.5.0",
 	typebox: "1.3.27",
 };
+/**
+ * Modules with a different compatibility contract, checked separately.
+ * `@sigrun/sigrun` carries the declared-settings types and the
+ * `@sigrun/sigrun/settings-schema` authoring surface the test suite proves
+ * the schema against; the schema builder (`typebox`) is pinned exactly in
+ * both places because the host links its own single copy.
+ */
+const CORE_PEER = ">=0.13.0";
 /** Development happens against pi-durable 1.5.0 (exact). */
 const DEV_PIN_OVERRIDES = {
 	"@earendil-works/chord": "1.5.0",
@@ -83,7 +91,19 @@ const DEV_PIN_OVERRIDES = {
 };
 const peers = manifest.peerDependencies ?? {};
 const devDeps = manifest.devDependencies ?? {};
+// The core peer is not an Earendil host module (its own compatibility
+// contract, and its dev link is the sibling checkout) — checked here so a
+// silent floor drop fails the gate instead.
+check(
+	peers["@sigrun/sigrun"] === CORE_PEER,
+	`package.json: peerDependencies["@sigrun/sigrun"] must be "${CORE_PEER}" (got ${JSON.stringify(peers["@sigrun/sigrun"])})`,
+);
+check(
+	devDeps["@sigrun/sigrun"] === "file:../sigrun",
+	'package.json: devDependencies["@sigrun/sigrun"] must be "file:../sigrun"',
+);
 for (const [module, spec] of Object.entries(peers)) {
+	if (module === "@sigrun/sigrun") continue;
 	check(
 		module in HOST_MODULE_PINS,
 		`package.json: peerDependencies carries non-host module "${module}"`,

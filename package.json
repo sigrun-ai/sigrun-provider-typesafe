@@ -1,6 +1,6 @@
 {
 	"name": "@sigrun/provider-typesafe",
-	"version": "0.1.3",
+	"version": "0.2.0",
 	"description": "Sigrun provider plugin: TypeSafe (Jev) as a decision provider",
 	"type": "module",
 	"engines": {
@@ -32,6 +32,7 @@
 		"@earendil-works/pi-durable": "1.5.0",
 		"@sigrun/sigrun": "file:../sigrun",
 		"@types/node": "^26.6.4",
+		"typebox": "1.3.27",
 		"typescript": "^7.0.2",
 		"vitest": "^5.0.3"
 	},
@@ -50,6 +51,8 @@
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-ai": "~1.5.0",
-		"@earendil-works/pi-durable": "~1.5.0"
+		"@earendil-works/pi-durable": "~1.5.0",
+		"@sigrun/sigrun": ">=0.13.0",
+		"typebox": "1.3.27"
 	}
 }
