@@ -45,6 +45,9 @@ export { createTypesafeCommand, spendNotice } from "./command.js";
  */
 export interface TypesafeProviderResult {
     readonly name: "@sigrun/provider-typesafe";
+    /** Display title (core 0.15.0's `SigrunExtensionResult.title`): trimmed
+     * to 1..60 characters by the loader; never changes the slug. */
+    readonly title: "TypeSafe";
     readonly decisionProviders: readonly DecisionProviderContribution[];
     readonly commands: readonly ExtensionCommandContribution[];
     readonly health: () => "ok" | "degraded";

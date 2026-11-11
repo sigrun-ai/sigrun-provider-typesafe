@@ -81,7 +81,7 @@ const HOST_MODULE_PINS = {
  * the schema against; the schema builder (`typebox`) is pinned exactly in
  * both places because the host links its own single copy.
  */
-const CORE_PEER = ">=0.13.0";
+const CORE_PEER = ">=0.15.0";
 /** Development happens against pi-durable 1.5.0 (exact). */
 const DEV_PIN_OVERRIDES = {
 	"@earendil-works/chord": "1.5.0",
