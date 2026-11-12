@@ -55,6 +55,7 @@ export default async function createTypesafeProvider(host, deps = {}) {
     const plugin = createTypesafePlugin(host, checked, deps);
     return {
         name: "@sigrun/provider-typesafe",
+        title: "TypeSafe",
         decisionProviders: [plugin.contribution],
         commands: [createTypesafeCommand(plugin)],
         health: plugin.health,

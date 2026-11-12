@@ -60,6 +60,13 @@ describe("typesafe settings schema", () => {
 		assertDrawable(TYPESAFE_SETTINGS_SCHEMA);
 	});
 
+	it("factory declares its title", async () => {
+		const { result } = await declared();
+		expect(result.title).toBe("TypeSafe");
+		// The identity is unchanged: the display title never becomes the slug.
+		expect(result.name).toBe("@sigrun/provider-typesafe");
+	});
+
 	it("the factory declares the schema and reads it once", async () => {
 		// The declared name and the package name are the same string, so the
 		// loader's provisional slug equals the final slug (`provider-typesafe`)
