@@ -74,6 +74,10 @@ export function declaredHost(
 							state.reads += 1;
 							return checkStoredSettings(declaration.schema, settings).value as S;
 						},
+						effective: async () => {
+							state.reads += 1;
+							return checkStoredSettings(declaration.schema, settings).value as S;
+						},
 						user: () => {
 							throw new Error("provider-typesafe declares no user schema");
 						},
